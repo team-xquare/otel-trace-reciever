@@ -1,0 +1,6 @@
+config:
+  name: otel-trace-reciever
+  service_type: be
+  port: 4317
+  domain:
+    prod: otel-trace-reciever.xquare.app
