@@ -26,12 +26,12 @@ func main() {
 	grpcServer := grpc.NewServer()
 	collectorpb.RegisterTraceServiceServer(grpcServer, traceServer)
 
-	lis, err := net.Listen("tcp", ":4317")
+	lis, err := net.Listen("tcp", "0.0.0.0:4317")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	log.Println("gRPC server listening on :4317")
+	log.Println("gRPC server listening on 0.0.0.0:4317")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
