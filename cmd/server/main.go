@@ -8,6 +8,7 @@ import (
 
 	"otel-trace-reciever/internal/repository"
 	"otel-trace-reciever/internal/server"
+	"google.golang.org/grpc/reflection"
 	"otel-trace-reciever/internal/service"
 
 	collectorpb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
@@ -25,6 +26,8 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	collectorpb.RegisterTraceServiceServer(grpcServer, traceServer)
+
+	reflection.Register(grpcServer)
 
 	lis, err := net.Listen("tcp", "0.0.0.0:4317")
 	if err != nil {
