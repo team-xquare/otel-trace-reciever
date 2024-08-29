@@ -25,7 +25,16 @@ func NewMongoRepository(uri string) (*MongoRepository, error) {
 	}, nil
 }
 
-func (r *MongoRepository) SaveTrace(ctx context.Context, trace *models.Trace) error {
-	_, err := r.traceCollection.InsertOne(ctx, trace)
+func (r *MongoRepository) SaveTraces(ctx context.Context, traces []*models.Trace) error {
+	if len(traces) == 0 {
+		return nil
+	}
+
+	documents := make([]interface{}, len(traces))
+	for i, trace := range traces {
+		documents[i] = trace
+	}
+
+	_, err := r.traceCollection.InsertMany(ctx, documents)
 	return err
 }

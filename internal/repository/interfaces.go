@@ -6,5 +6,5 @@ import (
 )
 
 type Repository interface {
-	SaveTrace(ctx context.Context, trace *models.Trace) error
+	SaveTraces(ctx context.Context, traces []*models.Trace) error
 }

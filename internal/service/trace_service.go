@@ -14,6 +14,6 @@ func NewTraceService(repo repository.Repository) *TraceService {
 	return &TraceService{repo: repo}
 }
 
-func (s *TraceService) ProcessTrace(ctx context.Context, trace *models.Trace) error {
-	return s.repo.SaveTrace(ctx, trace)
+func (s *TraceService) ProcessTrace(ctx context.Context, traces []*models.Trace) error {
+	return s.repo.SaveTraces(ctx, traces)
 }

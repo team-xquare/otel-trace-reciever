@@ -23,9 +23,9 @@ func NewTraceServer(traceService *service.TraceService) *TraceServer {
 
 func (s *TraceServer) Export(ctx context.Context, req *collectorpb.ExportTraceServiceRequest) (*collectorpb.ExportTraceServiceResponse, error) {
 	for _, resourceSpans := range req.ResourceSpans {
-		trace := telemetry.ConvertResourceSpansToTrace(resourceSpans)
-		if trace != nil {
-			err := s.traceService.ProcessTrace(ctx, trace)
+		traces := telemetry.ConvertResourceSpansToTraces(resourceSpans)
+		if traces != nil {
+			err := s.traceService.ProcessTrace(ctx, traces)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "Failed to process trace: %v", err)
 			}
