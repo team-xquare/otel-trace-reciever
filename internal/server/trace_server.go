@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"otel-trace-reciever/internal/service"
 	"otel-trace-reciever/pkg/telemetry"
 
@@ -27,6 +28,7 @@ func (s *TraceServer) Export(ctx context.Context, req *collectorpb.ExportTraceSe
 		if traces != nil {
 			err := s.traceService.ProcessTrace(ctx, traces)
 			if err != nil {
+				fmt.Sprintf("Failed to process trace: %v", err)
 				return nil, status.Errorf(codes.Internal, "Failed to process trace: %v", err)
 			}
 		}
