@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"otel-trace-reciever/internal/models"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,8 +18,15 @@ type MongoRepository struct {
 func NewMongoRepository(uri string) (*MongoRepository, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
 	}
+
+	err = client.Ping(context.Background(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping MongoDB: %v", err)
+	}
+
+	log.Println("Successfully connected to MongoDB")
 
 	return &MongoRepository{
 		client:          client,
@@ -35,6 +44,15 @@ func (r *MongoRepository) SaveTraces(ctx context.Context, traces []*models.Trace
 		documents[i] = trace
 	}
 
-	_, err := r.traceCollection.InsertMany(ctx, documents)
-	return err
+	result, err := r.traceCollection.InsertMany(ctx, documents)
+	if err != nil {
+		return fmt.Errorf("failed to insert traces: %v", err)
+	}
+
+	log.Printf("Successfully inserted %d traces", len(result.InsertedIDs))
+	return nil
+}
+
+func (r *MongoRepository) Close(ctx context.Context) error {
+	return r.client.Disconnect(ctx)
 }
