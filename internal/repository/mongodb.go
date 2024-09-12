@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"otel-trace-reciever/internal/models"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,9 +43,12 @@ func (r *MongoRepository) SaveTraces(ctx context.Context, traces []*models.Trace
 
 	documents := make([]interface{}, len(traces))
 	for i, trace := range traces {
-		doc, err := bson.Marshal(trace)
-		if err != nil {
-			return fmt.Errorf("failed to marshal trace: %v", err)
+		doc := bson.M{
+			"traceId":      trace.TraceID,
+			"serviceName":  trace.ServiceName,
+			"dateNano":     trace.DateNano,
+			"durationNano": trace.DurationNano,
+			"spans":        convertSpans(trace.Spans),
 		}
 		documents[i] = doc
 	}
@@ -56,6 +60,67 @@ func (r *MongoRepository) SaveTraces(ctx context.Context, traces []*models.Trace
 
 	log.Printf("Successfully inserted %d traces", len(result.InsertedIDs))
 	return nil
+}
+
+func convertSpans(spans []models.Span) []bson.M {
+	result := make([]bson.M, len(spans))
+	for i, span := range spans {
+		result[i] = bson.M{
+			"id":                span.ID,
+			"traceId":           span.TraceID,
+			"spanId":            span.SpanID,
+			"parentSpanId":      span.ParentSpanID,
+			"name":              span.Name,
+			"kind":              span.Kind,
+			"startTimeUnixNano": span.StartTimeUnixNano,
+			"endTimeUnixNano":   span.EndTimeUnixNano,
+			"attributes":        convertAttributes(span.Attributes),
+			"events":            convertEvents(span.Events),
+			"links":             convertLinks(span.Links),
+			"status":            convertStatus(span.Status),
+		}
+	}
+	return result
+}
+
+func convertAttributes(attrs map[string]interface{}) bson.M {
+	result := bson.M{}
+	for k, v := range attrs {
+		safeKey := strings.ReplaceAll(k, ".", "_")
+		result[safeKey] = v
+	}
+	return result
+}
+
+func convertEvents(events []models.SpanEvent) []bson.M {
+	result := make([]bson.M, len(events))
+	for i, event := range events {
+		result[i] = bson.M{
+			"timeUnixNano": event.TimeUnixNano,
+			"name":         event.Name,
+			"attributes":   convertAttributes(event.Attributes),
+		}
+	}
+	return result
+}
+
+func convertLinks(links []models.SpanLink) []bson.M {
+	result := make([]bson.M, len(links))
+	for i, link := range links {
+		result[i] = bson.M{
+			"traceId":    link.TraceID,
+			"spanId":     link.SpanID,
+			"attributes": convertAttributes(link.Attributes),
+		}
+	}
+	return result
+}
+
+func convertStatus(status models.SpanStatus) bson.M {
+	return bson.M{
+		"code":        status.Code,
+		"description": status.Description,
+	}
 }
 
 func (r *MongoRepository) Close(ctx context.Context) error {
