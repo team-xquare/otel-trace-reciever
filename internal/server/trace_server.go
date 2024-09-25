@@ -26,7 +26,7 @@ func (s *TraceServer) Export(ctx context.Context, req *collectorpb.ExportTraceSe
 	for _, resourceSpans := range req.ResourceSpans {
 		spans := telemetry.ConvertResourceSpansToSpans(resourceSpans)
 
-		err := s.traceService.ProcessSpan(ctx, &spans)
+		err := s.traceService.ProcessSpan(ctx, spans)
 		if err != nil {
 			fmt.Printf("Failed to process span: %v\n", err)
 			return nil, status.Errorf(codes.Internal, "Failed to process span: %v", err)

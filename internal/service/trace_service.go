@@ -18,6 +18,6 @@ func (s *TraceService) ProcessTrace(ctx context.Context, traces []*models.Trace)
 	return s.repo.SaveTraces(ctx, traces)
 }
 
-func (s *TraceService) ProcessSpan(ctx context.Context, spans *[]models.Span) error {
+func (s *TraceService) ProcessSpan(ctx context.Context, spans []models.Span) error {
 	return s.repo.SaveSpans(ctx, spans)
 }
