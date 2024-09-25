@@ -82,6 +82,7 @@ func (r *MongoRepository) SaveSpans(ctx context.Context, spans []models.Span) er
 			"events":            convertEvents(span.Events),
 			"links":             convertLinks(span.Links),
 			"status":            convertStatus(span.Status),
+			"serviceName":       span.ServiceName,
 		}
 		documents[i] = doc
 	}
