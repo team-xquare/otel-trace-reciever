@@ -2,56 +2,33 @@ package telemetry
 
 import (
 	"encoding/hex"
-	resourcepb "go.opentelemetry.io/proto/otlp/resource/v1"
 	"math"
 	"otel-trace-reciever/internal/models"
 
 	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
+	resourcepb "go.opentelemetry.io/proto/otlp/resource/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 )
 
-func ConvertResourceSpansToTraces(resourceSpans *tracepb.ResourceSpans) []*models.Trace {
-	traceMap := make(map[string]*models.Trace)
-	serviceName := getServiceName(resourceSpans.Resource)
+func ConvertResourceSpansToSpans(resourceSpans *tracepb.ResourceSpans) []models.Span {
+	var spans []models.Span
+	serviceNamePtr := getServiceName(resourceSpans.Resource)
+	serviceName := ""
+	if serviceNamePtr != nil {
+		serviceName = *serviceNamePtr
+	}
 
 	for _, scopeSpans := range resourceSpans.ScopeSpans {
 		for _, span := range scopeSpans.Spans {
-			convertedSpan := convertSpan(span)
-			traceID := convertedSpan.TraceID
-
-			if trace, exists := traceMap[traceID]; exists {
-				trace.Spans = append(trace.Spans, convertedSpan)
-				updateTraceDuration(trace, convertedSpan)
-			} else {
-				traceMap[traceID] = &models.Trace{
-					TraceID:      traceID,
-					Spans:        []models.Span{convertedSpan},
-					ServiceName:  serviceName,
-					DateNano:     convertedSpan.StartTimeUnixNano,
-					DurationNano: convertedSpan.EndTimeUnixNano - convertedSpan.StartTimeUnixNano,
-				}
-			}
+			convertedSpan := convertSpan(span, serviceName)
+			spans = append(spans, convertedSpan)
 		}
 	}
 
-	var traces []*models.Trace
-	for _, trace := range traceMap {
-		traces = append(traces, trace)
-	}
-
-	return traces
+	return spans
 }
 
-func updateTraceDuration(trace *models.Trace, span models.Span) {
-	if span.StartTimeUnixNano < trace.DateNano {
-		trace.DateNano = span.StartTimeUnixNano
-	}
-	if span.EndTimeUnixNano-trace.DateNano > trace.DurationNano {
-		trace.DurationNano = span.EndTimeUnixNano - trace.DateNano
-	}
-}
-
-func convertSpan(pbSpan *tracepb.Span) models.Span {
+func convertSpan(pbSpan *tracepb.Span, serviceName string) models.Span {
 	return models.Span{
 		ID:                hex.EncodeToString(pbSpan.SpanId),
 		TraceID:           hex.EncodeToString(pbSpan.TraceId),
@@ -65,6 +42,7 @@ func convertSpan(pbSpan *tracepb.Span) models.Span {
 		Events:            convertEvents(pbSpan.Events),
 		Links:             convertLinks(pbSpan.Links),
 		Status:            convertStatus(pbSpan.Status),
+		ServiceName:       serviceName, // 개별 서비스 이름 할당
 	}
 }
 
@@ -99,6 +77,8 @@ func convertAttributesPb(attrs []*commonpb.KeyValue) map[string]interface{} {
 			attributes[attr.Key] = convertArrayValue(v.ArrayValue)
 		case *commonpb.AnyValue_KvlistValue:
 			attributes[attr.Key] = convertKeyValueList(v.KvlistValue)
+		default:
+			attributes[attr.Key] = nil
 		}
 	}
 	return attributes

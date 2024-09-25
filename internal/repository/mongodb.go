@@ -62,6 +62,39 @@ func (r *MongoRepository) SaveTraces(ctx context.Context, traces []*models.Trace
 	return nil
 }
 
+func (r *MongoRepository) SaveSpans(ctx context.Context, spans *[]models.Span) error {
+	if len(*spans) == 0 {
+		return nil
+	}
+
+	documents := make([]interface{}, len(*spans))
+	for i, span := range *spans {
+		doc := bson.M{
+			"id":                span.ID,
+			"traceId":           span.TraceID,
+			"spanId":            span.SpanID,
+			"parentSpanId":      span.ParentSpanID,
+			"name":              span.Name,
+			"kind":              span.Kind,
+			"startTimeUnixNano": span.StartTimeUnixNano,
+			"endTimeUnixNano":   span.EndTimeUnixNano,
+			"attributes":        convertAttributes(span.Attributes),
+			"events":            convertEvents(span.Events),
+			"links":             convertLinks(span.Links),
+			"status":            convertStatus(span.Status),
+		}
+		documents[i] = doc
+	}
+
+	result, err := r.traceCollection.InsertMany(ctx, documents)
+	if err != nil {
+		return fmt.Errorf("failed to insert spans: %v", err)
+	}
+
+	log.Printf("Successfully inserted %d spans", len(result.InsertedIDs))
+	return nil
+}
+
 func convertSpans(spans []models.Span) []bson.M {
 	result := make([]bson.M, len(spans))
 	for i, span := range spans {

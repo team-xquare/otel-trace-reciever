@@ -24,13 +24,12 @@ func NewTraceServer(traceService *service.TraceService) *TraceServer {
 
 func (s *TraceServer) Export(ctx context.Context, req *collectorpb.ExportTraceServiceRequest) (*collectorpb.ExportTraceServiceResponse, error) {
 	for _, resourceSpans := range req.ResourceSpans {
-		traces := telemetry.ConvertResourceSpansToTraces(resourceSpans)
-		if traces != nil {
-			err := s.traceService.ProcessTrace(ctx, traces)
-			if err != nil {
-				fmt.Sprintf("Failed to process trace: %v", err)
-				return nil, status.Errorf(codes.Internal, "Failed to process trace: %v", err)
-			}
+		spans := telemetry.ConvertResourceSpansToSpans(resourceSpans)
+
+		err := s.traceService.ProcessSpan(ctx, &spans)
+		if err != nil {
+			fmt.Printf("Failed to process span: %v\n", err)
+			return nil, status.Errorf(codes.Internal, "Failed to process span: %v", err)
 		}
 	}
 

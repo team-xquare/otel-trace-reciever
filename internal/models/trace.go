@@ -21,6 +21,7 @@ type Span struct {
 	Events            []SpanEvent            `bson:"events"`
 	Links             []SpanLink             `bson:"links"`
 	Status            SpanStatus             `bson:"status"`
+	ServiceName       string                 `bson:"serviceName"`
 }
 
 type SpanEvent struct {
