@@ -32,7 +32,7 @@ func NewMongoRepository(uri string) (*MongoRepository, error) {
 
 	return &MongoRepository{
 		client:          client,
-		traceCollection: client.Database("tracing").Collection("traces"),
+		traceCollection: client.Database("tracing").Collection("spans"),
 	}, nil
 }
 
